@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FriendsVerse Ultra Pro X</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Urbanist:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <style>
+    body {
+      font-family: 'Urbanist', sans-serif;
+      background: linear-gradient(160deg, #0f172a, #1e3a8a);
+      color: #e0e7ff;
+      overflow-x: hidden;
+    }
+    .card {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 1px solid #334155;
+      transition: all 0.4s ease-in-out;
+      transform-style: preserve-3d;
+    }
+    .card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .input-style {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid #334155;
+      color: #e0e7ff;
+    }
+    .scroll-top {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      background-color: #4f46e5;
+      color: white;
+      padding: 12px;
+      border-radius: 9999px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen p-4 sm:p-6">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-5xl sm:text-6xl font-bold text-center mb-10 text-indigo-100 animate-pulse">🚀 Fyruz Verse Gellary</h1>
+
+    <!-- Upload Section -->
+    <div class="glass p-6 sm:p-8 rounded-2xl shadow-2xl mb-10">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <input type="file" id="imageUpload" accept="image/*" multiple class="p-3 rounded input-style" />
+        <select id="friendName" class="p-3 rounded input-style">
+          <option value="">Select Friend</option>
+          <option value="Basith">Basith</option>
+          <option value="Dinesh">Dinesh</option>
+          <option value="Fyruz">Fyruz</option>
+          <option value="Hari">Hari</option>
+          <option value="Karthik">Karthik</option>
+          <option value="Mufrith">Mufrith</option>
+          <option value="Sasni">Sasni</option>
+          <option value="Saamy">Saamy</option>
+          <option value="Sathman">Sathman</option>
+          <option value="Suresh">Suresh</option>
+          <option value="Vel">Vel</option>
+          <option value="Mohaideen">Mohaideen</option>
+        </select>
+        <button onclick="uploadImages()" class="bg-indigo-700 hover:bg-indigo-900 text-white py-3 rounded-xl shadow-lg transition transform hover:scale-105">📤 Upload to Ultra Gallery</button>
+      </div>
+    </div>
+
+    <!-- Friend Selector -->
+    <div class="glass p-6 rounded-2xl mb-10">
+      <h2 class="text-3xl font-semibold mb-6 text-blue-200">🎨 Friends Album Gallery</h2>
+      <input type="text" id="searchFriend" onkeyup="searchFriends()" placeholder="🔍 Search friend..." class="mb-6 p-3 w-full rounded-xl input-style" />
+      <div id="friendList" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4"></div>
+    </div>
+
+    <!-- Album Gallery -->
+    <div id="albums"></div>
+  </div>
+
+  <!-- Scroll to top -->
+  <div class="scroll-top" onclick="window.scrollTo({ top: 0, behavior: 'smooth' });">⬆️</div>
+
+  <script>
+    const friends = ["Basith","Dinesh","Fyruz","Hari","Karthik","Mufrith","Sasni","Saamy","Sathman","Suresh","Vel","Mohaideen"];
+    let images = JSON.parse(localStorage.getItem('friendsImages')) || [];
+
+    function uploadImages() {
+      const fileInput = document.getElementById('imageUpload');
+      const nameInput = document.getElementById('friendName');
+      const files = fileInput.files;
+      const name = nameInput.value;
+
+      if (!files.length || !name) {
+        alert('Please select image(s) and a friend.');
+        return;
+      }
+
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          images.push({
+            id: Date.now() + Math.random(),
+            name: name,
+            url: e.target.result,
+            date: new Date(),
+            reactions: 0
+          });
+          localStorage.setItem('friendsImages', JSON.stringify(images));
+          renderAlbums(name);
+          renderFriendList();
+        };
+        reader.readAsDataURL(file);
+      });
+
+      fileInput.value = '';
+      nameInput.value = '';
+    }
+
+    function addReaction(id) {
+      images = images.map(img => img.id === id ? { ...img, reactions: (img.reactions || 0) + 1 } : img);
+      localStorage.setItem('friendsImages', JSON.stringify(images));
+      renderAlbums();
+    }
+
+    function renderFriendList() {
+      const list = document.getElementById('friendList');
+      list.innerHTML = '';
+
+      const totalCount = images.length;
+      const allBtn = document.createElement('button');
+      allBtn.className = 'bg-gradient-to-br from-pink-600 to-purple-700 hover:from-pink-700 hover:to-purple-800 rounded-xl text-white py-2 px-4 transition w-full font-semibold';
+      allBtn.textContent = `All Friends (${totalCount})`;
+      allBtn.onclick = () => renderAlbums();
+      list.appendChild(allBtn);
+
+      friends.sort().forEach(name => {
+        const count = images.filter(img => img.name === name).length;
+        const btn = document.createElement('button');
+        btn.className = 'bg-purple-700 hover:bg-purple-900 rounded-xl text-white py-2 px-4 transition w-full font-semibold';
+        btn.textContent = `${name} (${count})`;
+        btn.onclick = () => renderAlbums(name);
+        list.appendChild(btn);
+      });
+    }
+
+    function searchFriends() {
+      const search = document.getElementById("searchFriend").value.toLowerCase();
+      const buttons = document.querySelectorAll("#friendList button");
+      buttons.forEach(btn => {
+        const name = btn.textContent.toLowerCase();
+        btn.style.display = name.includes(search) ? "block" : "none";
+      });
+    }
+
+    function deleteImage(id, currentName) {
+      images = images.filter(img => img.id !== id);
+      localStorage.setItem('friendsImages', JSON.stringify(images));
+      renderAlbums(currentName);
+      renderFriendList();
+    }
+
+    function autoBeautify(url) {
+      alert('AI Beautify Activated for: ' + url);
+    }
+
+    function tagFaces(url) {
+      alert('AI Tagging Activated for: ' + url);
+    }
+
+    function stylizeImage(url) {
+      alert('AI Stylizing Activated for: ' + url);
+    }
+
+    function renderAlbums(name) {
+      const albums = document.getElementById('albums');
+      albums.innerHTML = '';
+
+      const userImages = name ? images.filter(img => img.name === name) : images;
+      if (userImages.length === 0) {
+        albums.innerHTML = `<p class='text-center text-blue-300 text-xl mt-10'>No images found${name ? ` for ${name}` : ''}</p>`;
+        return;
+      }
+
+      const gallery = document.createElement('div');
+      gallery.innerHTML = `
+        <h2 class="text-4xl font-semibold text-center text-blue-200 mb-8">🖼️ ${name ? `${name}'s` : 'All Friends'} Ultra Album</h2>
+        <div class="text-center mb-6">
+          <button onclick="downloadAllImages('${name || 'all'}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow-md">⬇️ Download All</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+          ${userImages.map(img => `
+            <div class="card rounded-2xl p-5 text-center">
+              <img src="${img.url}" alt="${img.name}" class="rounded-xl mb-4 h-60 w-full object-cover transition-transform duration-300 hover:scale-105"/>
+              <p class="text-sm text-blue-100">${new Date(img.date).toLocaleString()}</p>
+              <div class="mt-3 space-x-2">
+                <a href="${img.url}" download="${img.name}.jpg" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">⬇️ Download</a>
+                <button onclick="deleteImage(${img.id}, '${img.name}')" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">🗑️ Delete</button>
+              </div>
+              <div class="mt-4 space-y-2">
+                <button onclick="autoBeautify('${img.url}')" class="bg-yellow-600 text-white px-3 py-2 rounded hover:bg-yellow-700 w-full">✨ Auto Beautify</button>
+                <button onclick="tagFaces('${img.url}')" class="bg-pink-600 text-white px-3 py-2 rounded hover:bg-pink-700 w-full">👥 Tag Faces</button>
+                <button onclick="stylizeImage('${img.url}')" class="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-800 w-full">🎨 Stylize</button>
+                <button onclick="addReaction(${img.id})" class="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-800 w-full">❤️ React (${img.reactions || 0})</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      albums.appendChild(gallery);
+    }
+
+    function downloadAllImages(name) {
+      const zip = new JSZip();
+      const selectedImages = name === 'all' ? images : images.filter(img => img.name === name);
+      const folder = zip.folder(name === 'all' ? 'All_Friends' : name);
+
+      const promises = selectedImages.map((img, index) => fetch(img.url)
+        .then(res => res.blob())
+        .then(blob => folder.file(`image_${index + 1}.jpg`, blob)));
+
+      Promise.all(promises).then(() => {
+        zip.generateAsync({ type: "blob" }).then(content => {
+          saveAs(content, `${name}_Album.zip`);
+        });
+      });
+    }
+
+    renderFriendList();
+    renderAlbums();
+  </script>
+</body>
+
+</html>
